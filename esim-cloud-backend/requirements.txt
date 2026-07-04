@@ -67,3 +67,4 @@ zipp==3.1.0
 pylti==0.7.0
 sphinxcontrib-openapi
 m2r2
+httpx==0.24.1

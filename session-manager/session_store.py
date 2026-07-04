@@ -9,7 +9,7 @@ redis_client = redis.Redis(
     decode_responses=True
 )
 
-SESSION_TTL = 100 # 30 minutes in seconds
+SESSION_TTL = 1800  # 30 minutes in seconds
 
 
 def save_session(user_id: str, pod_name: str, namespace: str):
@@ -81,3 +81,11 @@ def get_expired_pod_names():
             session = json.loads(data)
             active_pod_names.add(session["pod_name"])
     return active_pod_names  # cleanup service compare karega k8s pods se
+
+def get_session_ttl(user_id: str):
+    """
+    Kitne seconds baad session expire hoga, return karo.
+    Agar session hi nahi hai to None return karo.
+    """
+    ttl = redis_client.ttl(f"session:{user_id}")
+    return ttl if ttl and ttl > 0 else None

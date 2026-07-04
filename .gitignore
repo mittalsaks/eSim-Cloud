@@ -17,3 +17,8 @@ node_modules
 session-manager/kube-config.yaml
 __pycache__/
 *.pyc
+
+# local dev artifacts
+session-manager/container-kubeconfig.yaml
+*.bak
+*.bak*

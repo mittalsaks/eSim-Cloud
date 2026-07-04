@@ -43,6 +43,8 @@ export default function Simulator () {
   const [errorHelp, setErrorHelp] = useState(null)
 
   const [missingSimCmd, setMissingSimCmd] = useState(false)
+  const [sessionWarning, setSessionWarning] = useState(false)
+  const [sessionExpired, setSessionExpired] = useState(false)
 
   // History drawer state
   const [historyOpen, setHistoryOpen] = useState(false)
@@ -108,6 +110,33 @@ export default function Simulator () {
   const handleStatus = (status) => {
     setStatus(status)
   }
+
+  useEffect(() => {
+    if (!taskId) {
+      return
+    }
+    setSessionExpired(false)
+    setSessionWarning(false)
+    const intervalId = setInterval(() => {
+      api.get('simulation/session-status/'.concat(taskId))
+        .then((res) => {
+          const remaining = res.data.remaining_seconds
+          setSessionWarning(remaining !== undefined && remaining !== null && remaining <= 300)
+        })
+        .catch((error) => {
+          if (error.response && error.response.status === 404) {
+            setSessionExpired(true)
+            setSessionWarning(false)
+            clearInterval(intervalId)
+          } else {
+            console.log(error)
+          }
+        })
+    }, 30000)
+    return () => {
+      clearInterval(intervalId)
+    }
+  }, [taskId])
   const handlesimulateOpen = () => {
     setSimulateOpen(true)
   }
@@ -388,6 +417,21 @@ export default function Simulator () {
                 >
                   Quick Add Transient
                 </Button>
+              </div>
+            )}
+
+            {sessionWarning && !sessionExpired && (
+              <div style={{ textAlign: 'left', marginBottom: '16px' }}>
+                <MuiAlert severity="warning">
+                  Your simulation session will expire soon. Please save your work.
+                </MuiAlert>
+              </div>
+            )}
+            {sessionExpired && (
+              <div style={{ textAlign: 'left', marginBottom: '16px' }}>
+                <MuiAlert severity="error">
+                  Your simulation session has expired. Please simulate again to start a new session.
+                </MuiAlert>
               </div>
             )}
 

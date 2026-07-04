@@ -22,6 +22,7 @@ import LTISetup from './pages/LTISetup'
 import { useSelector, useDispatch } from 'react-redux'
 import { loadUser } from './redux/actions/index'
 import ProjectPage from './pages/ProjectPage'
+import SessionManager from './components/SessionManager/SessionManager'
 
 // Controls Private routes, this are accessible for authenticated users.  [ e.g : dashboard ]
 // and restricted routes disabled for authenticated users. [ e.g : login , signup ]
@@ -86,6 +87,7 @@ function App () {
         <PublicRoute exact path="/project" restricted={false} nav={true} component={ProjectPage} />
         <PublicRoute exact path="/simulator/ngspice" restricted={false} nav={true} component={Simulator} />
         <PublicRoute exact path="/gallery" restricted={false} nav={true} component={Gallery} />
+        <PublicRoute exact path="/session-test" restricted={false} nav={true} component={SessionManager} />
         <PublicRoute exact path="/projects" restricted={false} nav={true} component={PublicProjects} />
         <PublicRoute path="/dashboard" restricted={false} nav={false} component={Dashboard} /> // TODO: restore PrivateRoute when login is fixed
         <PrivateRoute path="/submission" component={Submissions} />

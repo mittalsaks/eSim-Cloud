@@ -19,10 +19,13 @@ import time
 import math
 import os
 import logging
-
-
+import httpx
 logger = logging.getLogger(__name__)
 
+
+SESSION_MANAGER_URL = os.getenv(
+    "SESSION_MANAGER_URL", "http://esim-cloud-session-manager-1:8001"
+)
 
 def saveNetlistDB(task_id, filepath, request):
     current_dir = settings.FILE_STORAGE_ROOT
@@ -94,6 +97,19 @@ class NetlistUploader(APIView):
                 serializer.data['task_id'], serializer.data['file'][0]['file'],
                 request)
             task_id = serializer.data['task_id']
+
+            try:
+                httpx.post(
+                    f"{SESSION_MANAGER_URL}/session/start",
+                    json={"user_id": str(task_id)},
+                    timeout=5.0
+                )
+            except httpx.RequestError as e:
+                logger.warning(
+                    f"Session-manager call failed for task "
+                    f"{task_id}: {e}"
+                )
+
             if(TIME_LIMIT == 0):
                 celery_task = process_task.apply_async(
                     kwargs={'task_id': str(task_id)}, task_id=str(task_id)
@@ -140,6 +156,46 @@ class CeleryResultView(APIView):
             return Response(response_data)
         else:
             raise ValidationError('Invalid uuid format')
+
+
+class SessionStatusView(APIView):
+    """
+    Returns remaining session time for a given task_id by
+    forwarding the request to session-manager
+    /api/session-status/<uuid>
+    """
+    permission_classes = (AllowAny,)
+    methods = ["GET"]
+
+    def get(self, request, task_id):
+        if isinstance(task_id, uuid.UUID):
+            try:
+                r = httpx.get(
+                    f"{SESSION_MANAGER_URL}/session/{task_id}/peek",
+                    timeout=5.0
+                )
+            except httpx.RequestError as e:
+                logger.warning(
+                    f"Session-manager status call failed for task "
+                    f"{task_id}: {e}"
+                )
+                return Response(
+                    {"error": "session-manager unreachable"},
+                    status=status.HTTP_502_BAD_GATEWAY
+                )
+            if r.status_code == 404:
+                return Response(
+                    {"error": "session expired"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            data = r.json()
+            response_data = {
+                "status": data.get("status"),
+                "remaining_seconds": data.get("remaining_seconds"),
+            }
+            return Response(response_data)
+        else:
+            raise ValidationError("Invalid uuid format")
 
 
 class SimulationResults(APIView):

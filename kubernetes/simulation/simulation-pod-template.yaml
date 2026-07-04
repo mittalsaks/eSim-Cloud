@@ -9,6 +9,7 @@ spec:
   containers:
   - name: simulation
     image: esim-simulation:latest
+    imagePullPolicy: Never
     resources:
       limits:
         memory: "512Mi"

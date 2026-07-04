@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from session_store import (
     save_session, get_session,
     delete_session, refresh_session,
-    get_all_sessions
+    get_all_sessions, get_session_ttl
 )
 from k8s_client import (
     create_simulation_pod,
@@ -48,6 +48,7 @@ class SessionResponse(BaseModel):
     pod_name: str
     namespace: str
     status: str
+    remaining_seconds: int = None
 
 
 @app.post("/session/start", response_model=SessionResponse)
@@ -128,7 +129,32 @@ async def get_session_status(user_id: str):
         user_id=user_id,
         pod_name=session["pod_name"],
         namespace=session["namespace"],
-        status=status  # "Terminated" frontend ko jayega
+        status=status,  # "Terminated" frontend ko jayega
+        remaining_seconds=get_session_ttl(user_id)
+    )
+
+
+@app.get("/session/{user_id}/peek", response_model=SessionResponse)
+async def peek_session_status(user_id: str):
+    # Same as get_session_status, but does NOT refresh/reset the TTL.
+    # Used for frontend polling that only wants to check remaining time
+    # without keeping the session alive artificially.
+    session = get_session(user_id)
+
+    if not session:
+        raise HTTPException(
+            status_code=404,
+            detail="Session expired or terminated"
+        )
+
+    status = get_pod_status(session["pod_name"], session["namespace"])
+
+    return SessionResponse(
+        user_id=user_id,
+        pod_name=session["pod_name"],
+        namespace=session["namespace"],
+        status=status,
+        remaining_seconds=get_session_ttl(user_id)
     )
 
 @app.delete("/session/{user_id}")

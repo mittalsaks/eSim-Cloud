@@ -17,6 +17,7 @@ def create_simulation_pod(user_id):
                 client.V1Container(
                     name="simulation",
                     image="esim-simulation:latest",
+                    image_pull_policy="Never",
                     resources=client.V1ResourceRequirements(
                         limits={"memory": "512Mi", "cpu": "1"},
                         requests={"memory": "256Mi", "cpu": "0.5"}

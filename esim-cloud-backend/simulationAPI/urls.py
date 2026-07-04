@@ -13,6 +13,8 @@ urlpatterns = [
 
     path('status/<uuid:task_id>',
          simulationAPI_views.CeleryResultView.as_view(), name='celery_status'),
+    path('session-status/<uuid:task_id>',
+         simulationAPI_views.SessionStatusView.as_view(), name='session_status'),
 
     path('history/<uuid:save_id>/<str:version>/<str:branch>/<str:sim>',
          simulationAPI_views.SimulationResults.as_view(),

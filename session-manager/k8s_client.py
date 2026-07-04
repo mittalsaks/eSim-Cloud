@@ -13,7 +13,7 @@ def load_k8s_config():
         try:
             # Agar local container mein hai, toh humari copy ki hui flat-config use karega
             config.load_kube_config(config_file="/root/.kube/config")
-            print("✅ K8s config loaded successfully from /root/.kube/config")
+            print("? K8s config loaded successfully from /root/.kube/config")
             return True
         except Exception as e:
             print(f"WARNING: No K8s config found, running in mock mode. Error: {e}")
@@ -58,9 +58,8 @@ def create_simulation_pod(user_id: str, namespace: str = "default"):
         "spec": {
             "containers": [{
                 "name": "ngspice",
-        "image": "esim-ngspice:latest",
+                "image": "esim-simulation:latest",
                         "imagePullPolicy": "Never",
-                        "command": ["sleep", "infinity"],
                 "ports": [{"containerPort": 5000}],
                 "resources": {
                     "limits": {
@@ -81,7 +80,7 @@ def create_simulation_pod(user_id: str, namespace: str = "default"):
         print(f"Pod {pod_name} created successfully")
         return pod_name
     except ApiException as e:
-        print(f"❌ Pod creation failed: {e}")  # 🆕 FIX: Error print karo — silent fail nahi
+        print(f"? Pod creation failed: {e}")  # ?? FIX: Error print karo � silent fail nahi
         raise
 
 def delete_simulation_pod(pod_name: str, namespace: str = "default"):
@@ -120,7 +119,7 @@ def get_pod_status(pod_name: str, namespace: str = "default"):
         return pod.status.phase  # Running, Pending, Failed, Succeeded
     except ApiException as e:
         if e.status == 404:
-            return "Terminated"  # ✅ Pod exist nahi karta — deleted/expired
+            return "Terminated"  # ? Pod exist nahi karta � deleted/expired
         return "Unknown"
     except Exception:
         return "Unknown"
@@ -137,7 +136,7 @@ def list_simulation_pods(namespace: str = "default"):
         label_selector="app=esim-simulation"
     )
     return [pod.metadata.name for pod in pods.items]
-# 🆕 NEW FUNCTION: Expired pods cleanup
+# ?? NEW FUNCTION: Expired pods cleanup
 def cleanup_expired_pods(active_pod_names: set, namespace: str = "default"):
     """
     K8s mein jo pods hain lekin Redis session nahi hai unhe delete karo.
@@ -151,5 +150,5 @@ def cleanup_expired_pods(active_pod_names: set, namespace: str = "default"):
 
     for pod_name in all_running_pods:
         if pod_name not in active_pod_names:
-            print(f"🧹 Cleaning expired pod: {pod_name}")
+            print(f"?? Cleaning expired pod: {pod_name}")
             delete_simulation_pod(pod_name, namespace)

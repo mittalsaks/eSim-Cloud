@@ -139,8 +139,8 @@ services:
       depends_on:
         - redis
       volumes:
-        - ./session-manager:/code
-        # - $HOME/.kube:/root/.kube:ro
+        - ./session-manager:/app
+        - ./session-manager/container-kubeconfig.yaml:/root/.kube/config:ro
       env_file:
         - .env
 volumes:
